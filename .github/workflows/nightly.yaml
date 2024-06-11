@@ -1,0 +1,66 @@
+name: Nightly Runs
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  mobile-dependencies-check:
+    runs-on: macos-latest
+    outputs:
+      CREATE_PR: ${{ steps.check_changes.outputs.CREATE_PR }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install SIP_CLI
+        run: |
+          dart pub global activate sip_cli
+
+      - name: Get Dependencies
+        shell: bash
+        run: |
+          cd apps/mobile || exit 1
+
+          sip pub get --recursive --no-version-check
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git diff --exit-code --name-only || CHANGED_FILES=true
+
+          if [ -z "$CHANGED_FILES" ]; then
+              echo "No changes detected. Exiting..."
+              echo "CREATE_PR=false" >> $GITHUB_OUTPUT
+              exit 0
+          fi
+
+          echo "Changes detected. Proceeding..."
+          echo "CREATE_PR=true" >> $GITHUB_OUTPUT
+
+      - name: Create PR
+        if: steps.check_changes.outputs.CREATE_PR
+        run: |
+          git checkout main
+          git pull origin main
+
+          git checkout -b chore/upgrade-dependencies
+
+          git add **/pubspec.yaml
+          git commit -m "chore: Upgrade dependencies" --no-verify
+
+          git push origin HEAD --no-verify --force-with-lease
+
+          gh pr create \
+          --title "Woah!: dependencies changed" \
+          --body "Theoretically, this shouldn't happen!" \
+          --base main \
+          --head chore/upgrade-dependencies
