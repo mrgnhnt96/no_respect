@@ -7,7 +7,7 @@ on:
 
 jobs:
   mobile-dependencies-check:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     outputs:
       CREATE_PR: ${{ steps.check_changes.outputs.CREATE_PR }}
     steps:
