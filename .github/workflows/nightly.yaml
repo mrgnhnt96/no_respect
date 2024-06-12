@@ -28,10 +28,7 @@ jobs:
 
       - name: Get Dependencies
         shell: bash
-        run: |
-          cd apps/mobile || exit 1
-
-          sip pub get --recursive --no-version-check
+        run: sip pub get --recursive --no-version-check
 
       - name: Check for changes
         id: check_changes
