@@ -45,7 +45,7 @@ jobs:
           echo "CREATE_PR=true" >> $GITHUB_OUTPUT
 
       - name: Create PR
-        if: steps.check_changes.outputs.CREATE_PR
+        if: ${{ steps.check_changes.outputs.CREATE_PR == 'true' }}
         run: |
           git checkout main
           git pull origin main
